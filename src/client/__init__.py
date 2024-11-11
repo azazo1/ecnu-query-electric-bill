@@ -16,11 +16,15 @@ from src.encryption import decrypt, encrypt
 from selenium.webdriver import Edge
 
 CLIENT_CONFIG = "client.toml"
+alert_bill = 10  # 警告电量 (度), 当宿舍电量低于当前电量时客户端显示警告.
 
 
 def load_config():
+    global alert_bill
     with open(CLIENT_CONFIG, "r") as f:
-        return toml.load(f)
+        ret = toml.load(f)
+        alert_bill = ret.get("alert_bill", alert_bill)
+        return ret
 
 
 async def _post_token_example():
@@ -88,7 +92,7 @@ class GuardClient:
                 prev_login = False
             else:
                 logging.info(f"{bill=}.")
-                if bill < 10:
+                if bill < alert_bill:
                     root = tk.Tk()
                     root.title("电费不足!")
                     root.wm_attributes("-topmost", True)
@@ -145,3 +149,5 @@ async def client_main():
         except Exception:
             traceback.print_exc()
         await asyncio.sleep(3)
+
+# todo 充值检测, 检测充值电量.
