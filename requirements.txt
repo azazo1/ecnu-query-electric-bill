@@ -1,0 +1,5 @@
+toml
+websockets
+pycryptodome==3.21.0
+httpx
+selenium
