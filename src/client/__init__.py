@@ -87,6 +87,13 @@ class GuardClient:
                 prev_login = False
             else:
                 logging.info(f"{bill=}.")
+                if bill < 10:
+                    root = tk.Tk()
+                    root.title("电费不足!")
+                    root.wm_attributes("-topmost", True)
+                    tk.Label(root, text="请及时进行电费的充值, 以防止意外断电的情况.").pack()
+                    tk.Button(root, text="好的", command=root.destroy).pack()
+                    root.mainloop()
             await asyncio.sleep(10)
 
     def __await__(self):
@@ -98,7 +105,7 @@ class GuardClient:
     def ask_for_login(cls):
         root = tk.Tk()
         root.title("请登录")
-        tk.Label(root, text="登录信息以失效, 请在打开的界面重新登录, 然后退出浏览器.").pack()
+        tk.Label(root, text="登录信息以失效, 请在打开的界面重新登录, 然后等待浏览器自动关闭.").pack()
         tk.Button(root, text="打开浏览器界面", command=root.destroy).pack()
         root.mainloop()
         driver = Edge()
