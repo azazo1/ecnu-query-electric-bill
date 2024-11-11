@@ -2,6 +2,7 @@ import asyncio
 import tkinter as tk
 import json
 import logging
+import traceback
 from typing import Optional
 
 import toml
@@ -105,7 +106,8 @@ class GuardClient:
     def ask_for_login(cls):
         root = tk.Tk()
         root.title("请登录")
-        tk.Label(root, text="登录信息以失效, 请在打开的界面重新登录, 然后等待浏览器自动关闭.").pack()
+        tk.Label(root,
+                 text="登录信息以失效, 请在打开的界面重新登录, 然后等待浏览器自动关闭.").pack()
         tk.Button(root, text="打开浏览器界面", command=root.destroy).pack()
         root.mainloop()
         driver = Edge()
@@ -136,5 +138,10 @@ class GuardClient:
 async def client_main():
     config = load_config()
     server_address = config["server_address"]
-    async with connect(f"ws://{server_address}:{SERVER_PORT}/") as client:
-        await GuardClient(client)
+    while True:
+        try:
+            async with connect(f"ws://{server_address}:{SERVER_PORT}/") as client:
+                await GuardClient(client)
+        except Exception:
+            traceback.print_exc()
+        await asyncio.sleep(3)
