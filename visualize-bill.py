@@ -2,7 +2,9 @@
 可视化电量变化.
 """
 import asyncio
+import os
 from datetime import datetime
+
 import matplotlib.pyplot as plt
 import csv
 
@@ -14,6 +16,7 @@ BILL_CSV_FILE = "out/bill.csv"
 
 
 async def download_data():
+    os.makedirs(os.path.dirname(BILL_CSV_FILE), exist_ok=True)
     server_address = load_config()["server_address"]
     async with connect(f"ws://{server_address}:{SERVER_PORT}/") as client:
         gc = GuardClient(client)

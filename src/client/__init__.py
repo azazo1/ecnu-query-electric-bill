@@ -82,6 +82,7 @@ class GuardClient:
     async def fetch_bill_routine(self):
         """对此 Task 调用 cancel 方法来停止运行."""
         prev_login = True
+        prev_bill = -1
         while not asyncio.current_task().cancelled():
             bill: float = await self.fetch_bill()
             if bill == -1:
@@ -99,6 +100,16 @@ class GuardClient:
                     tk.Label(root, text="请及时进行电费的充值, 以防止意外断电的情况.").pack()
                     tk.Button(root, text="好的", command=root.destroy).pack()
                     root.mainloop()
+                elif bill > prev_bill and prev_login:
+                    root = tk.Tk()
+                    root.title("电量充值")
+                    root.wm_attributes("-topmost", True)
+                    tk.Label(root,
+                             text=f"检测到电量增加: 增加度数为 {bill - prev_bill:.2f}.").pack()
+                    tk.Button(root, text="好的", command=root.destroy).pack()
+                    root.mainloop()
+                prev_bill = bill
+                prev_login = True
             await asyncio.sleep(10)
 
     def __await__(self):
@@ -111,7 +122,7 @@ class GuardClient:
         root = tk.Tk()
         root.title("请登录")
         tk.Label(root,
-                 text="登录信息以失效, 请在打开的界面重新登录, 然后等待浏览器自动关闭.").pack()
+                 text="登录信息已失效, 请在打开的界面重新登录, 然后等待浏览器自动关闭.").pack()
         tk.Button(root, text="打开浏览器界面", command=root.destroy).pack()
         root.mainloop()
         driver = Edge()
@@ -158,4 +169,4 @@ async def client_main():
             traceback.print_exc()
         await asyncio.sleep(3)
 
-# todo 充值检测, 检测充值电量.
+# todo 服务端 bill 为 -2 的时候表示没有配置好宿舍信息, 客户端使用爬虫提示用户登录并选择自己的宿舍然后提取用户信息.
