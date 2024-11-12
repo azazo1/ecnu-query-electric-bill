@@ -1,8 +1,10 @@
 import asyncio
 import json
 import logging
+import os
 import time
 from json import JSONDecodeError
+from typing import Optional
 
 import httpx
 import toml
@@ -13,6 +15,7 @@ from src import SERVER_PORT, Command, RetCode
 from src.encryption import encrypt, decrypt
 
 ROOM_FILE = "room.toml"
+BILL_FILE = "bill.csv"
 
 x_csrf_token = ""
 cookies = {}
@@ -67,15 +70,22 @@ def get_electric_bill():
     return bill
 
 
+async def send_ret(connection: ServerConnection, code: int, content: Optional[object] = None):
+    ret = {"retcode": code}
+    if content is not None:
+        ret['content'] = content
+    await connection.send(
+        encrypt(json.dumps(ret))
+    )
+
+
 async def dorm_querying(connection: ServerConnection):
     global x_csrf_token, cookies
     async for message in connection:
         message = json.loads(decrypt(message))
         logging.info(f"Got message: {message}")
         if message["type"] == Command.GET_BILL:
-            await connection.send(
-                encrypt(json.dumps({"retcode": RetCode.Ok, "content": get_electric_bill()}))
-            )
+            await send_ret(connection, RetCode.Ok, get_electric_bill())
         elif message["type"] == Command.POST_TOKEN:
             message = message["args"]
             if (isinstance(message, dict)
@@ -83,19 +93,21 @@ async def dorm_querying(connection: ServerConnection):
                     and isinstance(message.get('cookies'), dict)):
                 x_csrf_token = message.get('x_csrf_token')
                 cookies = message.get('cookies')
-                await connection.send(
-                    encrypt(json.dumps({"retcode": RetCode.Ok}))
-                )
+                await send_ret(connection, RetCode.Ok)
             else:
-                await connection.send(
-                    encrypt(json.dumps({"retcode": RetCode.ErrArgs}))
-                )
+                await send_ret(connection, RetCode.ErrArgs)
+        elif message["type"] == Command.FETCH_BILL_FILE:
+            if not os.path.exists(BILL_FILE):
+                await send_ret(connection, RetCode.ErrNoFile)
+            else:
+                with open(BILL_FILE, "r") as f:
+                    await send_ret(connection, RetCode.Ok, f.read())
 
 
 def record_bill():
     global bill
     logging.info(f"Recorded bill: {bill}.")
-    with open("bill.csv", 'a') as f:
+    with open(BILL_FILE, 'a') as f:
         f.write(f"{time.time():.2f}, {bill}\n")
 
 

@@ -138,6 +138,14 @@ class GuardClient:
         finally:
             driver.quit()
 
+    async def fetch_bill_file(self, save_file: str):
+        await self._send_command(Command.FETCH_BILL_FILE)
+        ret = await self._recv_ret()
+        if ret["retcode"] != 0:
+            raise ValueError(f"retcode is not zero: {ret}.")
+        with open(save_file, "w") as f:
+            f.write(ret["content"])
+
 
 async def client_main():
     config = load_config()

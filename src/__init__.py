@@ -26,9 +26,11 @@ class Command:
     """
     POST_TOKEN = 'post_token'
     GET_BILL = 'get_bill'
+    FETCH_BILL_FILE = 'fetch_bill_file'
 
 
 class RetCode:
     Ok = 0
     ErrUnknown = 1
     ErrArgs = 2
+    ErrNoFile = 3
