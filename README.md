@@ -26,11 +26,17 @@
 
 以下步骤皆在服务器中进行.
 
-#### 安全组设置
+#### 安全组/防火墙设置
 
 此为云服务器设置, 在云服务器上部署的服务端要让外界访问需要放行特定端口.
 
 请为 50530 端口放行 TCP 连接.
+
+如果是 CentOS 等操作系统, 需要使用命令行配置防火墙:
+```shell
+sudo firewall-cmd --zone=public --add-port=50530/tcp --permanent
+sudo firewall-cmd --reload
+```
 
 #### 信息填写
 
