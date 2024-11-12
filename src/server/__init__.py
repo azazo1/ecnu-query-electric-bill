@@ -39,8 +39,11 @@ def load_room():
 
 
 def save_room(roomNo: str, elcarea: int, elcbuis: str):
+    room_info = {"roomNo": roomNo, "elcarea": elcarea, "elcbuis": elcbuis}
+    logging.info(f"room info saved: {room_info}")
     with open(ROOM_FILE, "w") as f:
-        f.write(toml.dumps({"roomNo": roomNo, "elcarea": elcarea, "elcbuis": elcbuis}))
+        f.write(toml.dumps(room_info))
+    load_room()
 
 
 async def query_electric_degree():
@@ -100,8 +103,9 @@ async def dorm_querying(connection: ServerConnection):
     global x_csrf_token, cookies
     async for message in connection:
         message = json.loads(decrypt(message))
-        logging.info(f"Got message: {message}")
-        if message["type"] == Command.GET_BILL:
+        logging.info(f"Got message: {message['type']}")
+        logging.debug(f"Whole message: {message}")
+        if message["type"] == Command.GET_DEGREE:
             await send_ret(connection, RetCode.Ok, degree)
         elif message["type"] == Command.POST_TOKEN:
             args = message.get("args")
@@ -113,7 +117,7 @@ async def dorm_querying(connection: ServerConnection):
                 await send_ret(connection, RetCode.Ok)
             else:
                 await send_ret(connection, RetCode.ErrArgs)
-        elif message["type"] == Command.FETCH_BILL_FILE:
+        elif message["type"] == Command.FETCH_DEGREE_FILE:
             if not os.path.exists(DEGREE_FILE):
                 await send_ret(connection, RetCode.ErrNoFile)
             else:
@@ -135,21 +139,21 @@ async def dorm_querying(connection: ServerConnection):
                 await send_ret(connection, RetCode.ErrArgs)
 
 
-def record_bill():
+def record_degree():
     global degree
     logging.info(f"Recorded degree: {degree}.")
     with open(DEGREE_FILE, 'a') as f:
         f.write(f"{time.time():.2f}, {degree}\n")
 
 
-async def bill_querying():
+async def degree_querying():
     global degree
     while True:
         try:
             query_result = await query_electric_degree()
             logging.info(f"{query_result=}, {degree=}.")
             if query_result:
-                record_bill()
+                record_degree()
         except Exception as e:
             logging.error(e)
         await asyncio.sleep(10)
@@ -158,4 +162,4 @@ async def bill_querying():
 async def server_main():
     load_room()
     server = await websockets.asyncio.server.serve(dorm_querying, "", SERVER_PORT)
-    await asyncio.gather(server.serve_forever(), bill_querying())
+    await asyncio.gather(server.serve_forever(), degree_querying())

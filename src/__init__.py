@@ -26,8 +26,8 @@ class Command:
     """
     POST_TOKEN = 'post_token'
     POST_ROOM = 'post_room'
-    GET_BILL = 'get_bill'
-    FETCH_BILL_FILE = 'fetch_bill_file'
+    GET_DEGREE = 'get_degree'
+    FETCH_DEGREE_FILE = 'fetch_degree_file'
 
 
 class RetCode:
