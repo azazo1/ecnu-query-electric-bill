@@ -1,5 +1,4 @@
 import asyncio
-import time
 import tkinter as tk
 import json
 import logging
@@ -100,20 +99,17 @@ class GuardClient:
 
     async def fetch_degree_routine(self):
         """对此 Task 调用 cancel 方法来停止运行."""
-        prev_login = True
         prev_degree = -1
         while not asyncio.current_task().cancelled():
             degree: float = await self.fetch_degree()
             if degree == -1:
-                if prev_login:
-                    logging.info("login invalid.")
-                    # 从这里开始登录失效了, 重新登录, 需要启动浏览器.
-                    token = self.ask_for_login()
-                    if token is not None:
-                        await self.post_token(**token)
-                        alert("成功上传", "成功上传登录 token.")
-                        logging.info("token posted.")
-                prev_login = False
+                logging.info("login invalid.")
+                # 从这里开始登录失效了, 重新登录, 需要启动浏览器.
+                token = self.ask_for_login()
+                if token is not None:
+                    await self.post_token(**token)
+                    alert("成功上传", "成功上传登录 token.")
+                    logging.info("token posted.")
             elif degree == -2:
                 logging.info("room info missing.")
                 room = self.ask_for_room()
@@ -128,13 +124,12 @@ class GuardClient:
                         title="电费不足",
                         text="请及时进行电量的充值, 以防止意外断电的情况."
                     )
-                elif degree > prev_degree and prev_login:
+                elif degree > prev_degree > 0:  # prev_degree < 0 为特殊情况.
                     alert(
                         title="电量充值",
                         text=f"检测到电量增加: 增加度数为 {degree - prev_degree:.2f}."
                     )
                 prev_degree = degree
-                prev_login = True
             await asyncio.sleep(10)
 
     def __await__(self):
@@ -174,7 +169,6 @@ class GuardClient:
         finally:
             driver.quit()
 
-    # todo ask 方法自动缓存 cookie.
     @classmethod
     def ask_for_room(cls):
         if not alert(title="宿舍信息未配置",
