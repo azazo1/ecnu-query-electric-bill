@@ -15,11 +15,11 @@ from src import SERVER_PORT, Command, RetCode
 from src.encryption import encrypt, decrypt
 
 ROOM_FILE = "room.toml"
-BILL_FILE = "bill.csv"
+DEGREE_FILE = "degree.csv"
 
 x_csrf_token = ""
 cookies = {}
-bill = -1
+degree = -1
 
 roomNo = ""
 elcarea = -1
@@ -28,16 +28,34 @@ elcbuis = ""
 
 def load_room():
     global roomNo, elcarea, elcbuis
-    with open(ROOM_FILE, "r") as f:
-        room = toml.load(f)
-    roomNo = room["roomNo"]
-    elcarea = room["elcarea"]
-    elcbuis = room["elcbuis"]
+    try:
+        with open(ROOM_FILE, "r") as f:
+            room = toml.load(f)
+    except FileNotFoundError:
+        room = {}
+    roomNo = room.get("roomNo", "")
+    elcarea = room.get("elcarea", -1)
+    elcbuis = room.get("elcbuis", "")
 
 
-async def query_electric_bill():
-    """查询 electric bill 并把结果放在 bill 全局变量中, 返回是否成功获取."""
-    global bill
+def save_room(roomNo: str, elcarea: int, elcbuis: str):
+    with open(ROOM_FILE, "w") as f:
+        f.write(toml.dumps({"roomNo": roomNo, "elcarea": elcarea, "elcbuis": elcbuis}))
+
+
+async def query_electric_degree():
+    """
+    查询 electric degree 并把结果放在 degree 全局变量中, 返回是否成功获取.
+
+    - 成功查询时设置 degree 为剩余电量(度).
+    - 如果宿舍信息没配置, degree 为 -2.
+    - token 为设置或权限不足或宿舍信息不正确时, degree 为 -1.
+    """
+    global degree
+    if not roomNo or elcarea < 0 or not elcbuis:
+        # 没有配置宿舍信息.
+        degree = -2
+        return False
     async with httpx.AsyncClient() as client:
         data = {
             "sysid": 1,
@@ -56,18 +74,17 @@ async def query_electric_bill():
     try:
         ret = json.loads(response.text)
         if ret['retcode'] == 0 and ret['retmsg'] == "成功":
-            bill = ret["restElecDegree"]
+            degree = ret["restElecDegree"]
             return True
         else:
+            degree = -1
             return False
     except KeyError:
+        degree = -1
         return False
     except JSONDecodeError:
+        degree = -1
         return False
-
-
-def get_electric_bill():
-    return bill
 
 
 async def send_ret(connection: ServerConnection, code: int, content: Optional[object] = None):
@@ -85,42 +102,54 @@ async def dorm_querying(connection: ServerConnection):
         message = json.loads(decrypt(message))
         logging.info(f"Got message: {message}")
         if message["type"] == Command.GET_BILL:
-            await send_ret(connection, RetCode.Ok, get_electric_bill())
+            await send_ret(connection, RetCode.Ok, degree)
         elif message["type"] == Command.POST_TOKEN:
-            message = message["args"]
-            if (isinstance(message, dict)
-                    and isinstance(message.get('x_csrf_token'), str)
-                    and isinstance(message.get('cookies'), dict)):
-                x_csrf_token = message.get('x_csrf_token')
-                cookies = message.get('cookies')
+            args = message.get("args")
+            if (isinstance(args, dict)
+                    and isinstance(args.get('x_csrf_token'), str)
+                    and isinstance(args.get('cookies'), dict)):
+                x_csrf_token = args.get('x_csrf_token')
+                cookies = args.get('cookies')
                 await send_ret(connection, RetCode.Ok)
             else:
                 await send_ret(connection, RetCode.ErrArgs)
         elif message["type"] == Command.FETCH_BILL_FILE:
-            if not os.path.exists(BILL_FILE):
+            if not os.path.exists(DEGREE_FILE):
                 await send_ret(connection, RetCode.ErrNoFile)
             else:
-                with open(BILL_FILE, "r") as f:
+                with open(DEGREE_FILE, "r") as f:
                     await send_ret(connection, RetCode.Ok, f.read())
+        elif message["type"] == Command.POST_ROOM:
+            args = message.get("args")
+            if (isinstance(args, dict)
+                    and isinstance(args.get('roomNo'), str)
+                    and isinstance(args.get('elcarea'), int)
+                    and isinstance(args.get('elcbuis'), str)):
+                save_room(
+                    roomNo=args.get('roomNo'),
+                    elcarea=args.get('elcarea'),
+                    elcbuis=args.get('elcbuis')
+                )
+                await send_ret(connection, RetCode.Ok)
+            else:
+                await send_ret(connection, RetCode.ErrArgs)
 
 
 def record_bill():
-    global bill
-    logging.info(f"Recorded bill: {bill}.")
-    with open(BILL_FILE, 'a') as f:
-        f.write(f"{time.time():.2f}, {bill}\n")
+    global degree
+    logging.info(f"Recorded degree: {degree}.")
+    with open(DEGREE_FILE, 'a') as f:
+        f.write(f"{time.time():.2f}, {degree}\n")
 
 
 async def bill_querying():
-    global bill
+    global degree
     while True:
         try:
-            query_result = await query_electric_bill()
-            logging.info(f"{query_result=}.")
+            query_result = await query_electric_degree()
+            logging.info(f"{query_result=}, {degree=}.")
             if query_result:
                 record_bill()
-            else:
-                bill = -1  # dorm 查询到 bill 为 -1 时就能直到需要重新设置 token 和 cookies.
         except Exception as e:
             logging.error(e)
         await asyncio.sleep(10)

@@ -25,6 +25,7 @@ class Command:
     返回值就像: `{"retcode": RETCODE, content: ...}`.
     """
     POST_TOKEN = 'post_token'
+    POST_ROOM = 'post_room'
     GET_BILL = 'get_bill'
     FETCH_BILL_FILE = 'fetch_bill_file'
 
