@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import csv
 
 from src import SERVER_PORT
@@ -13,6 +14,10 @@ from src.client import GuardClient, load_config
 from websockets.asyncio.client import connect
 
 DEGREE_CSV_FILE = "out/degree.csv"
+
+# 解决中文显示的问题.
+mpl.rcParams['font.family'] = 'SimHei'
+plt.rcParams['axes.unicode_minus'] = False  # 步骤二 (解决坐标轴负数的负号显示问题)
 
 
 async def download_data():
