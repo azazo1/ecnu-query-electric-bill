@@ -53,11 +53,11 @@ def main():
         return
     start_date = datetime.fromtimestamp(timestamp[0])
     timestamp = list(
-        map(lambda x: (x - start_date.timestamp()) / 3600, timestamp)
+        map(lambda x: (x - start_date.timestamp()) / 3600 / 24, timestamp)
     )
     plt.plot(timestamp, degree, marker='o')
     plt.title(f'电量使用情况, 从 {start_date.strftime("%Y年%m月%d日%H时%M分%S秒")} 开始')
-    plt.xlabel("时间(小时)")
+    plt.xlabel("时间(天)")
     plt.ylabel("电量(度)")
     plt.grid(True)
     plt.show()
