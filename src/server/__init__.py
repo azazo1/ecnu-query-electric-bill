@@ -16,6 +16,7 @@ from src.encryption import encrypt, decrypt
 
 ROOM_FILE = "room.toml"
 DEGREE_FILE = "degree.csv"
+FETCH_DEGREE_LINES = 1000
 
 x_csrf_token = ""
 cookies = {}
@@ -99,6 +100,21 @@ async def send_ret(connection: ServerConnection, code: int, content: Optional[ob
     )
 
 
+def remove_duplicate_degrees_in_file():
+    prev_degree = -1
+    new = []
+    with open(DEGREE_FILE, "r") as f:
+        for line in f:
+            timestamp, degree_ = line.split(',')
+            degree_ = float(degree_)
+            if degree_ == prev_degree:
+                continue
+            new.append(','.join((timestamp, str(degree_))))
+            prev_degree = degree_
+    with open(DEGREE_FILE, "w") as f:
+        f.write('\n'.join(new))
+
+
 async def dorm_querying(connection: ServerConnection):
     global x_csrf_token, cookies
     async for message in connection:
@@ -121,8 +137,10 @@ async def dorm_querying(connection: ServerConnection):
             if not os.path.exists(DEGREE_FILE):
                 await send_ret(connection, RetCode.ErrNoFile)
             else:
+                remove_duplicate_degrees_in_file()
                 with open(DEGREE_FILE, "r") as f:
-                    await send_ret(connection, RetCode.Ok, f.read())
+                    await send_ret(connection, RetCode.Ok,
+                                   "\n".join(f.read().splitlines()[-FETCH_DEGREE_LINES:]))
         elif message["type"] == Command.POST_ROOM:
             args = message.get("args")
             if (isinstance(args, dict)
