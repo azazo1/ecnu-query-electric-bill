@@ -105,6 +105,8 @@ def remove_duplicate_degrees_in_file():
     new = []
     with open(DEGREE_FILE, "r") as f:
         for line in f:
+            if line.isspace():
+                continue
             timestamp, degree_ = line.split(',')
             degree_ = float(degree_)
             if degree_ == prev_degree:
@@ -112,7 +114,7 @@ def remove_duplicate_degrees_in_file():
             new.append(','.join((timestamp, str(degree_))))
             prev_degree = degree_
     with open(DEGREE_FILE, "w") as f:
-        f.write('\n'.join(new))
+        f.write('\n'.join(new) + "\n")
 
 
 async def dorm_querying(connection: ServerConnection):
