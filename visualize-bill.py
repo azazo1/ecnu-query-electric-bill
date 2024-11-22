@@ -2,6 +2,7 @@
 可视化电量变化.
 """
 import asyncio
+import math
 import os
 from datetime import datetime
 
@@ -45,26 +46,44 @@ def load_data():
     return timestamp, degree
 
 
-def smooth(data, alpha=0.6):
+def smooth(timestamp, data, alpha=0.9, k=0.6):
+    """
+    数据平滑, 但是要解决非相同时间间隔的数据影响.
+
+    # 符号解释
+
+    - alpha 为保留系数, 越大数据变动越慢.
+    - a 为保留系数实例, 经过 alpha 与间隔时间比例相乘得到, 远的数据保留系数实例 a 越小, 近的数据(高频)保留系数实例 a 越大.
+    - k 为距离促动速度, 越大则同距离时数据对变动速度影响越大.
+
+    alpha = 0, k = 0 时, 函数输出的数据和原始数据相同.
+    """
+    assert len(data) == len(timestamp)
     if not data:
         return []
+    max_delta_time = 0
+    for i in range(len(timestamp) - 1):
+        max_delta_time = max(max_delta_time, timestamp[i + 1] - timestamp[i])
     r = data[0]
     rst = []
-    for i in data:
-        r = r * alpha + i * (1 - alpha)
+    for i in range(len(data)):
+        if i == 0:
+            delta_time = 0
+        else:
+            delta_time = timestamp[i] - timestamp[i - 1]
+        a = alpha * math.exp(-k * (delta_time / max_delta_time))
+        r = r * a + data[i] * (1 - a)
         rst.append(r)
     return rst
 
 
 def consuming_speed(timestamp, degree):
     t, s = [], []  # 消耗速度时间戳和消耗速度, 单位: 度/天.
-    for i in range(len(timestamp)):
-        if i == len(timestamp) - 1:
-            break
+    for i in range(len(timestamp) - 1):
         delta_time = timestamp[i + 1] - timestamp[i]
         t.append(delta_time / 2 + timestamp[i])
         s.append((degree[i] - degree[i + 1]) / delta_time * 3600 * 24)
-    s = smooth(s)
+    s = smooth(t, s)
     return t, s
 
 
@@ -89,7 +108,7 @@ def main():
     day_stamp = [(i - start_date.timestamp()) / 3600 / 24 for i in timestamp]
     ax1 = ax.twinx()
     ax1.plot(day_stamp, speed, 'r--')
-    ax1.set_ylim(0)
+    ax1.set_ylim(0, 20)
     ax1.set_ylabel('电量消耗速度(度/天)')
 
     plt.show()
