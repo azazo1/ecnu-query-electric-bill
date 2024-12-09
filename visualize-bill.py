@@ -82,7 +82,7 @@ def consuming_speed(timestamp, degree):
     for i in range(len(timestamp) - 1):
         delta_time = timestamp[i + 1] - timestamp[i]
         t.append(delta_time / 2 + timestamp[i])
-        s.append((degree[i] - degree[i + 1]) / delta_time * 3600 * 24)
+        s.append(max(degree[i] - degree[i + 1], 0) / delta_time * 3600 * 24)
     s = smooth(t, s)
     return t, s
 
