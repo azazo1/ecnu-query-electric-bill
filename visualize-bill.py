@@ -98,7 +98,7 @@ def main():
         map(lambda x: (x - start_date.timestamp()) / 3600 / 24, timestamp)
     )
     fig, ax = plt.subplots()
-    ax.plot(day_stamp, degree, marker='o')
+    ax.plot(day_stamp, degree, marker='o', label="电量")
     ax.set_title(f'电量使用情况, 从 {start_date.strftime("%Y年%m月%d日%H时%M分%S秒")} 开始')
     ax.set_xlabel("时间(天)")
     ax.set_ylabel("电量(度)")
@@ -107,10 +107,13 @@ def main():
     timestamp, speed = consuming_speed(timestamp, degree)
     day_stamp = [(i - start_date.timestamp()) / 3600 / 24 for i in timestamp]
     ax1 = ax.twinx()
-    ax1.plot(day_stamp, speed, 'r--')
+    ax1.plot(day_stamp, speed, 'r--', label="电量消耗速度")
     ax1.set_ylim(0, 20)
     ax1.set_ylabel('电量消耗速度(度/天)')
 
+    ax.legend(loc="upper left")
+    ax1.legend(loc='upper right')
+    plt.tight_layout()
     plt.show()
 
 
