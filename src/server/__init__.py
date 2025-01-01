@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+import traceback
 from json import JSONDecodeError
 from typing import Optional
 
@@ -174,8 +175,8 @@ async def degree_querying():
             logging.info(f"{query_result=}, {degree=}.")
             if query_result:
                 record_degree()
-        except Exception as e:
-            logging.error(e)
+        except Exception:
+            logging.error(traceback.format_exc())
         await asyncio.sleep(10)
 
 
