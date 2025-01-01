@@ -4,7 +4,7 @@ import toml
 import os
 from pathlib import Path
 
-SERVER_PORT = 50530
+SERVER_PORT = 30530
 KEY_FILE = 'key.toml'
 
 os.chdir(Path(__file__).parent.parent)  # 移动到项目目录.
