@@ -1,5 +1,6 @@
 import asyncio
-import tkinter as tk
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout
 import json
 import logging
 import traceback
@@ -30,35 +31,40 @@ def load_config():
 async def _post_token_example():
     server_address = load_config()["server_address"]
     client = await connect(f"ws://{server_address}:{SERVER_PORT}/")
-    await client.send(encrypt(json.dumps(
-        {"type": Command.POST_TOKEN, "args": {
-            "x_csrf_token": "...",
-            "cookies": {
-                "JSESSIONID": "...",
-                "cookie": "..."
-            }
-        }}
-    )))
+    await client.send(
+        encrypt(
+            json.dumps(
+                {
+                    "type": Command.POST_TOKEN,
+                    "args": {
+                        "x_csrf_token": "...",
+                        "cookies": {"JSESSIONID": "...", "cookie": "..."},
+                    },
+                }
+            )
+        )
+    )
     print(decrypt(await client.recv()))
     await client.close()
 
 
 def alert(title: str, text: str, button: str = "好的", topmost=True) -> bool:
     """显示对话弹窗, 如果用户表示同意操作, 返回 True, 如果用户关闭弹窗返回 False."""
-    grant = False
+    dialog = QDialog()
+    dialog.setWindowTitle(title)
+    dialog.setWindowFlags(
+        dialog.windowFlags() | Qt.WindowStaysOnTopHint
+    ) if topmost else None
 
-    def grant_it():
-        nonlocal grant
-        grant = True
-        root.destroy()
+    layout = QVBoxLayout()
+    layout.addWidget(QLabel(text))
 
-    root = tk.Tk()
-    root.title(title)
-    root.wm_attributes("-topmost", topmost)
-    tk.Label(root, text=text).pack()
-    tk.Button(root, text=button, command=grant_it).pack()
-    root.mainloop()
-    return grant
+    btn = QPushButton(button)
+    btn.clicked.connect(dialog.accept)
+    layout.addWidget(btn)
+
+    dialog.setLayout(layout)
+    return dialog.exec() == QDialog.Accepted
 
 
 class GuardClient:
@@ -74,17 +80,14 @@ class GuardClient:
         dic = {"type": type_}
         if args is not None:
             dic["args"] = args
-        await self.client.send(encrypt(
-            json.dumps(dic)
-        ))
+        await self.client.send(encrypt(json.dumps(dic)))
 
     async def _recv_ret(self):
         return json.loads(decrypt(await self.client.recv()))
 
     async def post_token(self, x_csrf_token: str, cookies: dict[str, str]):
         await self._send_command(
-            Command.POST_TOKEN,
-            {"x_csrf_token": x_csrf_token, "cookies": cookies}
+            Command.POST_TOKEN, {"x_csrf_token": x_csrf_token, "cookies": cookies}
         )
         ret = await self._recv_ret()
         if ret["retcode"] != 0:
@@ -122,12 +125,12 @@ class GuardClient:
                 if degree < alert_degree:
                     alert(
                         title="电费不足",
-                        text="请及时进行电量的充值, 以防止意外断电的情况."
+                        text="请及时进行电量的充值, 以防止意外断电的情况.",
                     )
                 elif degree > prev_degree > 0:  # prev_degree < 0 为特殊情况.
                     alert(
                         title="电量充值",
-                        text=f"检测到电量增加: 增加度数为 {degree - prev_degree:.2f}."
+                        text=f"检测到电量增加: 增加度数为 {degree - prev_degree:.2f}.",
                     )
                 prev_degree = degree
             await asyncio.sleep(10)
@@ -139,10 +142,10 @@ class GuardClient:
 
     @classmethod
     def ask_for_login(cls):
-        if not alert(title="请登录",
-                     text="登录信息已失效,\n"
-                          "请在打开的界面重新登录,\n"
-                          "然后等待浏览器自动关闭."):
+        if not alert(
+            title="请登录",
+            text="登录信息已失效,\n请在打开的界面重新登录,\n然后等待浏览器自动关闭.",
+        ):
             return None
         driver = Edge()
         try:
@@ -150,19 +153,16 @@ class GuardClient:
                 "https://epay.ecnu.edu.cn/epaycas/electric/load4electricbill?elcsysid=1"
             )  # 这个网址会重定向至登录界面.
             WebDriverWait(driver, timeout=60 * 60).until(
-                EC.url_matches(r'https://epay.ecnu.edu.cn')  # 等待登录之后的重定向.
+                EC.url_matches(r"https://epay.ecnu.edu.cn")  # 等待登录之后的重定向.
             )
-            j_session_id = driver.get_cookie("JSESSIONID")['value']
-            cookie = driver.get_cookie("cookie")['value']
+            j_session_id = driver.get_cookie("JSESSIONID")["value"]
+            cookie = driver.get_cookie("cookie")["value"]
             # 在 main frame 中以获取 x_csrf_token.
             meta = driver.find_element(By.XPATH, "/html/head/meta[4]")
             x_csrf_token = meta.get_property("content")
             rst = {
                 "x_csrf_token": x_csrf_token,
-                "cookies": {
-                    "JSESSIONID": j_session_id,
-                    "cookie": cookie
-                }
+                "cookies": {"JSESSIONID": j_session_id, "cookie": cookie},
             }
             logging.debug("Got login info: {}".format(rst))
             return rst
@@ -171,10 +171,12 @@ class GuardClient:
 
     @classmethod
     def ask_for_room(cls):
-        if not alert(title="宿舍信息未配置",
-                     text="请点击确认按钮, 先登录 ECNU 帐号,\n"
-                          "然后对自己宿舍的电量进行一次查询,\n"
-                          "浏览器会读取宿舍信息并自动关闭."):
+        if not alert(
+            title="宿舍信息未配置",
+            text="请点击确认按钮, 先登录 ECNU 帐号,\n"
+            "然后对自己宿舍的电量进行一次查询,\n"
+            "浏览器会读取宿舍信息并自动关闭.",
+        ):
             return None
         driver = Edge()
         try:
@@ -183,7 +185,7 @@ class GuardClient:
             )  # 这个网址会重定向至登录界面.
             # 先等待用户登录.
             WebDriverWait(driver, timeout=60 * 60).until(
-                EC.url_matches(r'https://epay.ecnu.edu.cn')
+                EC.url_matches(r"https://epay.ecnu.edu.cn")
             )
             # 等待按钮出现, 放置回调函数.
             WebDriverWait(driver, timeout=60 * 60).until(
@@ -214,7 +216,7 @@ class GuardClient:
     async def post_room(self, roomNo: str, elcarea: int, elcbuis: str):
         await self._send_command(
             Command.POST_ROOM,
-            {"roomNo": roomNo, "elcarea": elcarea, "elcbuis": elcbuis}
+            {"roomNo": roomNo, "elcarea": elcarea, "elcbuis": elcbuis},
         )
         ret = await self._recv_ret()
         if ret["retcode"] != 0:

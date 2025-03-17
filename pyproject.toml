@@ -11,6 +11,8 @@ dependencies = [
     "httpx",
     "selenium",
     "matplotlib",
+    "pyside6>=6.8.2.1",
+    "qasync>=0.27.1",
 ]
 
 [project.scripts]
@@ -25,3 +27,10 @@ gbillvisualize = "ecnuqueryelectricbill.visualize_bill:main"
 
 [tool.uv]
 package = true
+
+[[tool.uv.index]]
+url = "https://tuna.tsinghua.edu.cn/simple"
+default = true
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
