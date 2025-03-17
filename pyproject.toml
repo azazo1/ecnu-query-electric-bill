@@ -1,0 +1,27 @@
+[project]
+name = "ecnuqueryelectricbill"
+version = "0.1.0"
+description = "ECNUers: Avoid dorm blackouts! Get low electricity alerts with this script."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "toml",
+    "websockets",
+    "pycryptodome==3.21.0",
+    "httpx",
+    "selenium",
+    "matplotlib",
+]
+
+[project.scripts]
+billqueryclient = "ecnuqueryelectricbill.main_client:main"
+billqueryserver = "ecnuqueryelectricbill.main_server:main"
+billvisualize = "ecnuqueryelectricbill.visualize_bill:main"
+
+[project.gui-scripts]
+gbillqueryclient = "ecnuqueryelectricbill.main_client:main"
+gbillqueryserver = "ecnuqueryelectricbill.main_server:main"
+gbillvisualize = "ecnuqueryelectricbill.visualize_bill:main"
+
+[tool.uv]
+package = true

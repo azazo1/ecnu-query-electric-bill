@@ -5,11 +5,13 @@
 import asyncio
 from websockets.asyncio.client import connect
 
-from src import SERVER_PORT
-from src.client import GuardClient, load_config, alert
+from ecnuqueryelectricbill import SERVER_PORT
+from ecnuqueryelectricbill.client import GuardClient, load_config, alert
 
 
 async def main():
+    # 已经在项目根目录见 __init__.py
+
     config = load_config()
     server_address = config["server_address"]
     async with connect(f"ws://{server_address}:{SERVER_PORT}/") as client:
@@ -20,5 +22,5 @@ async def main():
             alert("成功上传", "成功上传宿舍信息")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -12,8 +12,8 @@ import toml
 import websockets
 from websockets.asyncio.server import ServerConnection
 
-from src import SERVER_PORT, Command, RetCode
-from src.encryption import encrypt, decrypt
+from ecnuqueryelectricbill import SERVER_PORT, Command, RetCode
+from ecnuqueryelectricbill.encryption import encrypt, decrypt
 
 ROOM_FILE = "room.toml"
 DEGREE_FILE = "degree.csv"

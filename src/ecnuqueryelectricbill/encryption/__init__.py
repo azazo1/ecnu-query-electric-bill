@@ -1,4 +1,4 @@
-from src import KEY, IV
+from ecnuqueryelectricbill import KEY, IV
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 

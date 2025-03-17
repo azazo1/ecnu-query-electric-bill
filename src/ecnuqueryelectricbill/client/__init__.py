@@ -11,8 +11,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from websockets.asyncio.client import connect, ClientConnection
 
-from src import Command, SERVER_PORT
-from src.encryption import decrypt, encrypt
+from ecnuqueryelectricbill import Command, SERVER_PORT
+from ecnuqueryelectricbill.encryption import decrypt, encrypt
 from selenium.webdriver import Edge
 
 CLIENT_CONFIG = "client.toml"

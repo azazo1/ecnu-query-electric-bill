@@ -1,6 +1,7 @@
 """
 可视化电量变化.
 """
+
 import asyncio
 import math
 import os
@@ -10,15 +11,15 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import csv
 
-from src import SERVER_PORT
-from src.client import GuardClient, load_config
+from ecnuqueryelectricbill import SERVER_PORT
+from ecnuqueryelectricbill.client import GuardClient, load_config
 from websockets.asyncio.client import connect
 
 DEGREE_CSV_FILE = "out/degree.csv"
 
 # 解决中文显示的问题.
-mpl.rcParams['font.family'] = 'SimHei'
-plt.rcParams['axes.unicode_minus'] = False  # 步骤二 (解决坐标轴负数的负号显示问题)
+mpl.rcParams["font.family"] = "SimHei"
+plt.rcParams["axes.unicode_minus"] = False  # 步骤二 (解决坐标轴负数的负号显示问题)
 
 
 async def download_data():
@@ -88,18 +89,19 @@ def consuming_speed(timestamp, degree):
 
 
 def main():
+    # 已经在项目根目录见 __init__.py
     asyncio.run(download_data())
     timestamp, degree = load_data()
     if not timestamp:
         print("no data")
         return
     start_date = datetime.fromtimestamp(timestamp[0])
-    day_stamp = list(
-        map(lambda x: (x - start_date.timestamp()) / 3600 / 24, timestamp)
-    )
+    day_stamp = list(map(lambda x: (x - start_date.timestamp()) / 3600 / 24, timestamp))
     fig, ax = plt.subplots()
-    ax.plot(day_stamp, degree, marker='o', label="电量")
-    ax.set_title(f'电量使用情况, 从 {start_date.strftime("%Y年%m月%d日%H时%M分%S秒")} 开始')
+    ax.plot(day_stamp, degree, marker="o", label="电量")
+    ax.set_title(
+        f"电量使用情况, 从 {start_date.strftime('%Y年%m月%d日%H时%M分%S秒')} 开始"
+    )
     ax.set_xlabel("时间(天)")
     ax.set_ylabel("电量(度)")
     ax.grid(True)
@@ -107,15 +109,15 @@ def main():
     timestamp, speed = consuming_speed(timestamp, degree)
     day_stamp = [(i - start_date.timestamp()) / 3600 / 24 for i in timestamp]
     ax1 = ax.twinx()
-    ax1.plot(day_stamp, speed, 'r--', label="电量消耗速度")
+    ax1.plot(day_stamp, speed, "r--", label="电量消耗速度")
     ax1.set_ylim(0, 20)
-    ax1.set_ylabel('电量消耗速度(度/天)')
+    ax1.set_ylabel("电量消耗速度(度/天)")
 
     ax.legend(loc="upper left")
-    ax1.legend(loc='upper right')
+    ax1.legend(loc="upper right")
     plt.tight_layout()
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
