@@ -231,12 +231,24 @@ class GuardClient:
             f.write(ret["content"])
 
 
+def notify_server_shutdown():
+    alert(
+        title="billquery-client",
+        text="无法连接到 billquery 服务器,\n请检查服务器状态.",
+    )
+
+
 async def client_main():
     config = load_config()
     server_address = config["server_address"]
     while True:
         try:
-            async with connect(f"ws://{server_address}:{SERVER_PORT}/") as client:
+            try:
+                conn = await connect(f"ws://{server_address}:{SERVER_PORT}/")
+            except Exception:
+                notify_server_shutdown()
+                continue
+            async with conn as client:
                 await GuardClient(client)
         except Exception:
             traceback.print_exc()
