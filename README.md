@@ -1,4 +1,9 @@
 # ECNU 宿舍电费自动查询
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://www.python.org/)
+[![Server](https://img.shields.io/badge/Server-Linux%20%7C%20Windows%20%7C%20macOS-success)](.)
+[![Client](https://img.shields.io/badge/Client-Windows-important)](.)
+[![Status](https://img.shields.io/badge/Status-Active-success)](.)
+[![ECNU](https://img.shields.io/badge/For-ECNU-FF6B35)](https://www.ecnu.edu.cn/)
 
 经常烦恼忘记充电费导致宿舍断电?
 此脚本可以为广大 ECNUer 实现电量不足时自动提醒, 防止意外断电的尴尬情况.
